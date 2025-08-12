@@ -1,0 +1,34 @@
+# Ignore Django files
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+
+# Ignore IDE files
+.vscode/
+.pydevproject
+.project
+.settings/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore virtualenv files
+venv/
+env/
+.venv/
+
+# Ignore database files
+db.sqlite3
+*.db
+
+# Ignore media files
+media/
+
+# Ignore static files
+staticfiles/
+
+# Ignore node_modules (if using npm)
+node_modules/
