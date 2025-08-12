@@ -61,10 +61,7 @@ class RideViewSet(viewsets.ModelViewSet):
 
 @swagger_auto_schema(tags=["RideEvents"])
 class RideEventViewSet(viewsets.ModelViewSet):
-    queryset = (
-        RideEvent.objects.select_related("ride__rider", "ride__driver")
-        .all()
-    )
+    queryset = RideEvent.objects.select_related("ride__rider", "ride__driver").all()
     serializer_class = RideEventSerializer
     permission_classes = [IsAdminRole]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
