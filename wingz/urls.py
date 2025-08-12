@@ -31,7 +31,7 @@ router.register(r"users", UserViewSet, basename="user")
 router.register(r"rides", RideViewSet, basename="ride")
 router.register(r"ride_events", RideEventViewSet, basename="ride_event")
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("site/admin/", admin.site.urls),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
@@ -41,7 +41,4 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path("api/", include(router.urls)),
-    path("", admin.site.urls),
-    # path("redoc/", schema_view.with_ui("redoc",
-    # ^^ cache_timeout=0), name="schema-redoc"),
 ]

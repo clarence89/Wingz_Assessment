@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "rides",
     "users",
     "rest_framework",
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
