@@ -13,9 +13,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @swagger_auto_schema(tags=["Rides"])
 class RideViewSet(viewsets.ModelViewSet):
-    queryset = Ride.objects.all()
+    queryset = (
+        Ride.objects.select_related("rider", "driver")
+        .prefetch_related("ride_events")
+        .all()
+    )
     serializer_class = RideSerializer
     permission_classes = [IsAdminRole]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -41,26 +46,25 @@ class RideViewSet(viewsets.ModelViewSet):
             lat2 = Radians(F("pickup_latitude"))
             lon2 = Radians(F("pickup_longitude"))
 
-            cosine_angle = (
-                Cos(lat1) * Cos(lat2) * Cos(lon2 - lon1) +
-                Sin(lat1) * Sin(lat2)
+            cosine_angle = Cos(lat1) * Cos(lat2) * Cos(lon2 - lon1) + Sin(lat1) * Sin(
+                lat2
             )
 
             distance_expr = ExpressionWrapper(
-                6371 * ACos(cosine_angle),
-                output_field=FloatField()
+                6371 * ACos(cosine_angle), output_field=FloatField()
             )
 
-            queryset = queryset.annotate(
-                distance=distance_expr
-            ).order_by("distance")
+            queryset = queryset.annotate(distance=distance_expr).order_by("distance")
 
         return queryset
 
 
 @swagger_auto_schema(tags=["RideEvents"])
 class RideEventViewSet(viewsets.ModelViewSet):
-    queryset = RideEvent.objects.all()
+    queryset = (
+        RideEvent.objects.select_related("ride__rider", "ride__driver")
+        .all()
+    )
     serializer_class = RideEventSerializer
     permission_classes = [IsAdminRole]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
