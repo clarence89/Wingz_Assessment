@@ -36,6 +36,329 @@
 
 ---
 
+## Postman Collection
+
+```json
+{
+ "info": {
+  "_postman_id": "725615f8-c0f4-4754-b7d4-f77508daa113",
+  "name": "Rides API Flow",
+  "description": "Full workflow from login to ride creation, update, listing, deletion, and ride events",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+  "_exporter_id": "29014621",
+  "_collection_link": "https://thealphadevs.postman.co/workspace/Team-Workspace~9bf3e20a-c514-4036-8bc4-192264d2700c/collection/29014621-725615f8-c0f4-4754-b7d4-f77508daa113?action=share&source=collection_link&creator=29014621"
+ },
+ "item": [
+  {
+   "name": "1. Login",
+   "event": [
+    {
+     "listen": "test",
+     "script": {
+      "exec": [
+       "var jsonData = pm.response.json();\r",
+       "\r",
+       "if (jsonData.access_token) {\r",
+       "    pm.globals.set(\"token\", jsonData.access_token);\r",
+       "} else if (jsonData.token) {\r",
+       "    pm.globals.set(\"token\", jsonData.token);\r",
+       "} else if (jsonData.access) {\r",
+       "    pm.globals.set(\"token\", jsonData.access);\r",
+       "} else {\r",
+       "    console.log(\"No token found in the response\");\r",
+       "}\r",
+       ""
+      ],
+      "type": "text/javascript",
+      "packages": {}
+     }
+    }
+   ],
+   "request": {
+    "method": "POST",
+    "header": [
+     {
+      "key": "Content-Type",
+      "value": "application/json"
+     }
+    ],
+    "body": {
+     "mode": "raw",
+     "raw": "{\n    \"username\": \"yourusername\",\n    \"password\": \"yourpassword\"\n}"
+    },
+    "url": {
+     "raw": "http://localhost:8000/api/token/",
+     "protocol": "http",
+     "host": [
+      "localhost"
+     ],
+     "port": "8000",
+     "path": [
+      "api",
+      "token",
+      ""
+     ]
+    }
+   },
+   "response": []
+  },
+  {
+   "name": "2. Create Ride",
+   "request": {
+    "auth": {
+     "type": "bearer",
+     "bearer": [
+      {
+       "key": "token",
+       "value": "{{token}}",
+       "type": "string"
+      }
+     ]
+    },
+    "method": "POST",
+    "header": [
+     {
+      "key": "Authorization",
+      "value": "Bearer {{token}}"
+     },
+     {
+      "key": "Content-Type",
+      "value": "application/json"
+     }
+    ],
+    "body": {
+     "mode": "raw",
+     "raw": "{\n    \"status\": \"pickup\",\n    \"rider_id\": 1,\n    \"driver_id\": 1,\n    \"pickup_latitude\": 14.5995,\n    \"pickup_longitude\": 120.9842\n}"
+    },
+    "url": {
+     "raw": "http://localhost:8000/api/rides/",
+     "protocol": "http",
+     "host": [
+      "localhost"
+     ],
+     "port": "8000",
+     "path": [
+      "api",
+      "rides",
+      ""
+     ]
+    }
+   },
+   "response": []
+  },
+  {
+   "name": "3. List Rides",
+   "request": {
+    "auth": {
+     "type": "bearer",
+     "bearer": [
+      {
+       "key": "token",
+       "value": "{{token}}",
+       "type": "string"
+      }
+     ]
+    },
+    "method": "GET",
+    "header": [
+     {
+      "key": "Authorization",
+      "value": "Bearer {{token}}",
+      "disabled": true
+     }
+    ],
+    "url": {
+     "raw": "http://localhost:8000/api/rides/",
+     "protocol": "http",
+     "host": [
+      "localhost"
+     ],
+     "port": "8000",
+     "path": [
+      "api",
+      "rides",
+      ""
+     ]
+    }
+   },
+   "response": []
+  },
+  {
+   "name": "4. Update Ride",
+   "request": {
+    "auth": {
+     "type": "bearer",
+     "bearer": [
+      {
+       "key": "token",
+       "value": "{{token}}",
+       "type": "string"
+      }
+     ]
+    },
+    "method": "PUT",
+    "header": [
+     {
+      "key": "Authorization",
+      "value": "Bearer {{access_token}}",
+      "disabled": true
+     },
+     {
+      "key": "Content-Type",
+      "value": "application/json"
+     }
+    ],
+    "body": {
+     "mode": "raw",
+     "raw": "{\n    \"status\": \"dropoff\",\n    \"rider_id\": 1,\n    \"driver_id\": 1,\n    \"pickup_latitude\": 11,\n    \"pickup_longitude\": 11,\n    \"dropoff_latitude\": 1,\n    \"dropoff_longitude\": 1\n}"
+    },
+    "url": {
+     "raw": "http://localhost:8000/api/rides/1/",
+     "protocol": "http",
+     "host": [
+      "localhost"
+     ],
+     "port": "8000",
+     "path": [
+      "api",
+      "rides",
+      "1",
+      ""
+     ]
+    }
+   },
+   "response": []
+  },
+  {
+   "name": "5. Create Ride Event",
+   "request": {
+    "auth": {
+     "type": "bearer",
+     "bearer": [
+      {
+       "key": "token",
+       "value": "{{token}}",
+       "type": "string"
+      }
+     ]
+    },
+    "method": "POST",
+    "header": [
+     {
+      "key": "Authorization",
+      "value": "Bearer {{access_token}}",
+      "disabled": true
+     },
+     {
+      "key": "Content-Type",
+      "value": "application/json"
+     }
+    ],
+    "body": {
+     "mode": "raw",
+     "raw": "{\n    \"ride_id\": 1,\n    \"description\": \"Reached pickup point\"\n}"
+    },
+    "url": {
+     "raw": "http://localhost:8000/api/ride_events/",
+     "protocol": "http",
+     "host": [
+      "localhost"
+     ],
+     "port": "8000",
+     "path": [
+      "api",
+      "ride_events",
+      ""
+     ]
+    }
+   },
+   "response": []
+  },
+  {
+   "name": "6. List Ride Events",
+   "request": {
+    "auth": {
+     "type": "bearer",
+     "bearer": [
+      {
+       "key": "token",
+       "value": "{{token}}",
+       "type": "string"
+      }
+     ]
+    },
+    "method": "GET",
+    "header": [
+     {
+      "key": "Authorization",
+      "value": "Bearer {{access_token}}",
+      "disabled": true
+     }
+    ],
+    "url": {
+     "raw": "http://localhost:8000/api/ride_events/",
+     "protocol": "http",
+     "host": [
+      "localhost"
+     ],
+     "port": "8000",
+     "path": [
+      "api",
+      "ride_events",
+      ""
+     ]
+    }
+   },
+   "response": []
+  },
+  {
+   "name": "7. Delete Ride",
+   "request": {
+    "auth": {
+     "type": "bearer",
+     "bearer": [
+      {
+       "key": "token",
+       "value": "{{token}}",
+       "type": "string"
+      }
+     ]
+    },
+    "method": "DELETE",
+    "header": [
+     {
+      "key": "Authorization",
+      "value": "Bearer {{access_token}}",
+      "disabled": true
+     }
+    ],
+    "url": {
+     "raw": "http://localhost:8000/api/rides/1/",
+     "protocol": "http",
+     "host": [
+      "localhost"
+     ],
+     "port": "8000",
+     "path": [
+      "api",
+      "rides",
+      "1",
+      ""
+     ]
+    }
+   },
+   "response": []
+  }
+ ],
+ "variable": [
+  {
+   "key": "access_token",
+   "value": ""
+  }
+ ]
+}
+```
+
 ## SQL Report Query
 
 The following query returns the **count of trips longer than 1 hour**, grouped by **month** and **driver**.
