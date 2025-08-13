@@ -1,9 +1,11 @@
+from django.utils import timezone
+import datetime
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import F, Value, FloatField, ExpressionWrapper
-from django.db.models.functions import Radians, Sin, Cos, ACos
+from django.db.models import Prefetch
+from django.db.models.expressions import RawSQL
 
 from users.permissions import IsAdminRole
 from .models import Ride, RideEvent
@@ -16,47 +18,52 @@ logger = logging.getLogger(__name__)
 
 @swagger_auto_schema(tags=["Rides"])
 class RideViewSet(viewsets.ModelViewSet):
-    queryset = (
-        Ride.objects.select_related("rider", "driver")
-        .prefetch_related("ride_events")
-        .all()
-    )
     serializer_class = RideSerializer
     permission_classes = [IsAdminRole]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = RideFilter
-    ordering_fields = ["pickup_time", "distance"]
+
+    ordering_fields = ["pickup_time"]
+    ordering = ["pickup_time"]
+    search_fields = ["rider__email", "driver__email"]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-
-        user_latitude = self.request.query_params.get("latitude")
-        user_longitude = self.request.query_params.get("longitude")
-
-        if user_latitude and user_longitude:
-            try:
-                user_latitude = float(user_latitude)
-                user_longitude = float(user_longitude)
-            except ValueError:
-                logger.error("Invalid latitude or longitude format.")
-                raise ValueError("Invalid latitude or longitude format.")
-
-            lat1 = Radians(Value(user_latitude))
-            lon1 = Radians(Value(user_longitude))
-            lat2 = Radians(F("pickup_latitude"))
-            lon2 = Radians(F("pickup_longitude"))
-
-            cosine_angle = Cos(lat1) * Cos(lat2) * Cos(lon2 - lon1) + Sin(lat1) * Sin(
-                lat2
+        last_24h = timezone.now() - datetime.timedelta(hours=24)
+        qs = Ride.objects.select_related("rider", "driver").prefetch_related(
+            Prefetch(
+                "ride_events",
+                queryset=RideEvent.objects.filter(created_at__gte=last_24h),
+                to_attr="prefetched_todays_ride_events",
             )
+        )
 
-            distance_expr = ExpressionWrapper(
-                6371 * ACos(cosine_angle), output_field=FloatField()
+        order_by = self.request.query_params.get("order_by")
+        lat = self.request.query_params.get("lat")
+        lng = self.request.query_params.get("lng")
+
+        if order_by != "distance":
+            return qs
+
+        if not lat or not lng:
+            return qs
+
+        try:
+            lat_f = float(lat)
+            lng_f = float(lng)
+        except ValueError:
+            return qs
+
+        distance_sql = """
+            ST_DistanceSphere(
+                ST_MakePoint(%s, %s),
+                ST_MakePoint(COALESCE(pickup_longitude, 0), COALESCE(pickup_latitude, 0))
             )
-
-            queryset = queryset.annotate(distance=distance_expr).order_by("distance")
-
-        return queryset
+        """
+        qs = qs.exclude(pickup_latitude__isnull=True).exclude(
+            pickup_longitude__isnull=True
+        )
+        qs = qs.annotate(distance_m=RawSQL(distance_sql, (lng_f, lat_f)))
+        return qs.order_by("distance_m", "id")
 
 
 @swagger_auto_schema(tags=["RideEvents"])

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Ride, RideEvent
 from users.models import User
 import datetime
-
+from django.utils import timezone
 
 class UserRideSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,7 +19,6 @@ class GetRideEventSerializer(serializers.ModelSerializer):
 class RideSerializer(serializers.ModelSerializer):
     rider = UserRideSerializer(read_only=True)
     driver = UserRideSerializer(read_only=True)
-    ride_events = GetRideEventSerializer(many=True, read_only=True)
     todays_ride_events = serializers.SerializerMethodField()
 
     rider_id = serializers.PrimaryKeyRelatedField(
@@ -28,6 +27,7 @@ class RideSerializer(serializers.ModelSerializer):
     driver_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), source="driver", write_only=True
     )
+    distance_m = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Ride
@@ -41,16 +41,18 @@ class RideSerializer(serializers.ModelSerializer):
             "dropoff_latitude",
             "dropoff_longitude",
             "pickup_time",
-            "ride_events",
             "todays_ride_events",
+            "distance_m",
         )
 
     def get_todays_ride_events(self, obj):
-        todays_events = [
-            e for e in obj.ride_events.all()
-            if e.created_at.date() == datetime.date.today()
-        ]
-        return GetRideEventSerializer(todays_events, many=True).data
+        events = getattr(obj, "prefetched_todays_ride_events", None)
+        if events is not None:
+            return GetRideEventSerializer(events, many=True).data
+        
+        last_24h = timezone.now() - datetime.timedelta(hours=24)
+        events = obj.ride_events.filter(created_at__gte=last_24h)
+        return GetRideEventSerializer(events, many=True).data
 
 
 class GetRideSerializer(serializers.ModelSerializer):
